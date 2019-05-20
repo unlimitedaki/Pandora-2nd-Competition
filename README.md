@@ -34,7 +34,7 @@ python -m pip install -r requirements.txt
 
 4. 测试依赖是否安装成功；
 ```shell
-pytest -v
+python -m pytest -v
 ```
 
 如果出现类似以下结果，则说明依赖安装成功：
@@ -46,7 +46,7 @@ pytest -v
 
 > **PS: 运行 Flask**
 ```shell
-flask run
+python -m flask run
 ```
 
 ## 注意事项
