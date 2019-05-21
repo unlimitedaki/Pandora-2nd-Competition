@@ -1,4 +1,8 @@
-from flask import Flask
+from flask import Flask,render_template,request
+import base64
+from io import BytesIO
+import json
+import hashlib
 
 
 def create_app():
@@ -18,7 +22,8 @@ def create_app():
         """
         以此项目中的404.html作为此Web Server工作时的404错误页
         """
-        pass
+        return render_template("404.html")
+
 
     # TODO: 完成接受 HTTP_URL 的 picture_reshape
     # TODO: 完成接受相对路径的 picture_reshape
@@ -43,7 +48,29 @@ def create_app():
         }
         """
         import PIL
-        pass
+        from PIL import Image
+        argu = request.args.get('arguments')
+        f = open("pandora\\"+argu,'r',encoding = 'utf-8')
+        data = f.read()
+        bytedata = base64.b64decode(data)
+        image_data = BytesIO(bytedata)
+        img = Image.open(image_data)
+        rimg = img.resize((100,100),Image.ANTIALIAS)
+
+        output_buffer = BytesIO()
+        rimg.save(output_buffer, format='JPEG')
+        byte_data = output_buffer.getvalue()
+        base64_str = str(base64.b64encode(byte_data),encoding = 'utf-8')
+
+        m = hashlib.md5()
+        m.update(byte_data)
+        md5_str = m.hexdigest()
+        # img = PIL.Image.open()
+        redata={
+            "md5":md5_str,
+            "base64_picture":base64_str
+        }
+        return json.dumps(redata)
 
     # TODO: 爬取 996.icu Repo，获取企业名单
     @app.route('/996')
