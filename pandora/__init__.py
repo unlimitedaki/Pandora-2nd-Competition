@@ -3,8 +3,11 @@ import base64
 from io import BytesIO
 import json
 import hashlib
-
-
+from flask import jsonify
+import PIL
+from PIL import Image
+import urllib
+import re
 def create_app():
     app = Flask(__name__)
 
@@ -22,7 +25,7 @@ def create_app():
         """
         以此项目中的404.html作为此Web Server工作时的404错误页
         """
-        return render_template("404.html")
+        return render_template("404.html"),404
 
 
     # TODO: 完成接受 HTTP_URL 的 picture_reshape
@@ -47,18 +50,24 @@ def create_app():
             "base64_picture": <图片reshape后的base64编码: str>
         }
         """
-        import PIL
-        from PIL import Image
-        argu = request.args.get('arguments')
-        f = open("pandora\\"+argu,'r',encoding = 'utf-8')
-        data = f.read()
+
+        argu = request.args.get('b64_url')
+        if argu.find('.txt')!= -1:
+            f = open("pandora\\"+argu,'r',encoding = 'utf-8')
+            data = f.read()
+        else:
+            response = urllib.request.urlopen(argu)
+            datab = response.read()    
+            data = datab.decode('utf-8')
+
+        
         bytedata = base64.b64decode(data)
         image_data = BytesIO(bytedata)
         img = Image.open(image_data)
         rimg = img.resize((100,100),Image.ANTIALIAS)
 
         output_buffer = BytesIO()
-        rimg.save(output_buffer, format='JPEG')
+        rimg.save(output_buffer, format='png')
         byte_data = output_buffer.getvalue()
         base64_str = str(base64.b64encode(byte_data),encoding = 'utf-8')
 
@@ -70,7 +79,7 @@ def create_app():
             "md5":md5_str,
             "base64_picture":base64_str
         }
-        return json.dumps(redata)
+        return jsonify(redata)
 
     # TODO: 爬取 996.icu Repo，获取企业名单
     @app.route('/996')
@@ -86,6 +95,19 @@ def create_app():
             "description": <description 描述>
         }, ...]
         """
-        pass
-
+        response = urllib.request.urlopen('https://github.com/996icu/996.ICU/blob/master/blacklist/README.md')   
+        data = response.read().decode('utf-8')
+        re_table = '<tr>\n<td.+>(.+)</td>\n<td.+>(.+)</td>\n<td.+>(.+)</td>\n<td.+>(.+)</td>\n.+\n</tr>'
+        re_cmp = re.compile(re_table)
+        result = re_cmp.findall(data)
+        res = []
+        for r in request:
+            res.append({
+                'city':r[0],
+                'company':r[1].split('</a>')[0],
+                'exposure_time':r[2],
+                'description':r[3]
+            })
+        app.config['JSON_AS_ASCII'] = False
+        return jsonify(res)
     return app
