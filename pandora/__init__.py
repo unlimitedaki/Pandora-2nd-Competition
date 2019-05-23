@@ -61,25 +61,20 @@ def create_app():
             data = datab.decode('utf-8')
 
         
-        bytedata = base64.b64decode(data)
-        image_data = BytesIO(bytedata)
-        img = Image.open(image_data)
-        rimg = img.resize((100,100),Image.ANTIALIAS)
-
+        result = base64.b64decode(data)
+        im = Image.open(BytesIO(result))
+        im = im.resize((100, 100), Image.ANTIALIAS)
         output_buffer = BytesIO()
-        rimg.save(output_buffer, format='png')
-        byte_data = output_buffer.getvalue()
-        base64_str = str(base64.b64encode(byte_data),encoding = 'utf-8')
+        im.save(output_buffer, format='png')
+        bs = output_buffer.getvalue()
 
-        m = hashlib.md5()
-        m.update(byte_data)
-        md5_str = m.hexdigest()
-        # img = PIL.Image.open()
-        redata={
-            "md5":md5_str,
-            "base64_picture":base64_str
-        }
-        return jsonify(redata)
+        b64e = base64.encodebytes(bs)
+        md5 = hashlib.md5(bs).hexdigest()
+        result = {}
+        result['md5'] = md5
+        result['base64_picture'] = b64e.decode('utf-8').replace('\n', '')
+        return jsonify(result)
+
 
     # TODO: 爬取 996.icu Repo，获取企业名单
     @app.route('/996')
@@ -101,7 +96,7 @@ def create_app():
         re_cmp = re.compile(re_table)
         result = re_cmp.findall(data)
         res = []
-        for r in request:
+        for r in result:
             res.append({
                 'city':r[0],
                 'company':r[1].split('</a>')[0],
