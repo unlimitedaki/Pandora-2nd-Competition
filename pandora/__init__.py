@@ -8,6 +8,7 @@ import PIL
 from PIL import Image
 import urllib
 import re
+import os
 def create_app():
     app = Flask(__name__)
 
@@ -51,18 +52,19 @@ def create_app():
         }
         """
 
-        argu = request.args.get('b64_url')
-        if argu.find('.txt')!= -1:
-            f = open("pandora\\"+argu,'r',encoding = 'utf-8')
-            data = f.read()
-        else:
+        argu = request.args['b64_url']
+        try:
             response = urllib.request.urlopen(argu)
             datab = response.read()    
             data = datab.decode('utf-8')
-
+        except:
+            SITE_ROOT = os.path.realpath(os.path.dirname(__file__))
+            img_path = os.path.join(SITE_ROOT, 'img.txt')
+            f = open(img_path,'r')
+            data = f.read()
         
-        result = base64.b64decode(data)
-        im = Image.open(BytesIO(result))
+        res = base64.b64decode(data)
+        im = Image.open(BytesIO(res))
         im = im.resize((100, 100), Image.ANTIALIAS)
         output_buffer = BytesIO()
         im.save(output_buffer, format='png')
